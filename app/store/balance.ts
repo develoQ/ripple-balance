@@ -122,10 +122,14 @@ const TARGET_ADDRESS: Array<{ name: string; address: string }> = [
 ]
 const startDate = moment()
   .subtract(1, 'days')
-  .subtract(24, 'months')
+  .subtract(12, 'months')
   .utc()
   .startOf('days')
 const endDate = moment().subtract(1, 'days').utc().endOf('days')
+
+function sleepByPromise(sec: number) {
+  return new Promise((resolve) => setTimeout(resolve, sec * 1000))
+}
 
 const fetchInitialBalance = async (address: {
   name: string
@@ -161,9 +165,10 @@ const fetchData = async (address: { name: string; address: string }) => {
         },
       }
     )
-    console.log(startDate.toISOString())
-    console.log(endDate.toISOString())
-    console.log(resData)
+    // console.log(startDate.toISOString())
+    // console.log(endDate.toISOString())
+    // console.log(resData)
+
     // eslint-disable-next-line camelcase
     let nextFinalBalanceData: { final_balance?: number; date?: moment.Moment }
     resData.balance_changes.forEach((b) => {
@@ -273,11 +278,12 @@ export default class balance extends VuexModule {
 
       const initBlance = await fetchInitialBalance(address)
       this.appendInitalBalanceData(initBlance)
+      await sleepByPromise(3)
     }
   }
 
   @Action({ rawError: true })
-  getBalanceDataSet(type: ChartDataType) {
+  getBalanceDataSet(_type: ChartDataType) {
     console.log('getBalanceDataSet start')
     const befBalance: number[] = this.getInitialBalanceData
     const retData = this.getDateList.map((date) => {
@@ -288,41 +294,24 @@ export default class balance extends VuexModule {
 
         const setBalance =
           findData === undefined ? befBalance[balanceIdx] : findData.balance
-        const setChange = findData === undefined ? 0 : findData.change
         befBalance[balanceIdx] =
           findData === undefined ? befBalance[balanceIdx] : findData.balance
 
-        return type === ChartDataType.BALANCE ? setBalance : setChange
+        return setBalance
       })
-      if (type === ChartDataType.BALANCE) {
-        return balanceDataList.reduce((sum, element) => {
-          return sum + element
-        })
-      } else {
-        return (
-          balanceDataList[
-            this.getBalanceData.findIndex((b) => {
-              return b.name === 'Jed(tacostand)'
-            })
-          ] * -1
-        )
-      }
+      return balanceDataList.reduce((sum, element) => {
+        return sum + element
+      })
     })
     this.setBalanceChangeData([...retData])
     this.setChartDatasets({
-      type: type === ChartDataType.BALANCE ? 'line' : 'bar',
-      label: type === ChartDataType.BALANCE ? 'Balance' : 'Release',
+      type: 'line',
+      label: 'Balance',
       data: retData,
-      yAxisID: type === ChartDataType.BALANCE ? 'y-axis-1' : 'y-axis-2',
+      yAxisID: 'y-axis-1',
       pointRadius: 0,
-      borderColor:
-        type === ChartDataType.BALANCE
-          ? 'rgba(200,200,200,1)'
-          : 'rgba(253,174,107,0.8)',
-      backgroundColor:
-        type === ChartDataType.BALANCE
-          ? 'rgba(254,230,206,0.8)'
-          : 'rgba(253,174,107,0.8)',
+      borderColor: 'rgba(200,200,200,1)',
+      backgroundColor: 'rgba(254,230,206,0.8)',
     })
     console.log('getBalanceDataSet end')
   }

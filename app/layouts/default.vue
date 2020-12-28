@@ -21,7 +21,7 @@ import { Vue, Component } from 'nuxt-property-decorator'
 @Component({})
 export default class extends Vue {
   get title() {
-    return 'Jed Balance'
+    return 'Ripple Balance'
   }
 }
 </script>
